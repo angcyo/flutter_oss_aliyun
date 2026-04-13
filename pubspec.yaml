@@ -8,18 +8,22 @@ topics:
 version: 6.4.2
 
 environment:
-  sdk: ">=2.17.1 <4.0.0"
+  sdk: ^3.10.0
 
 dependencies:
-  crypto: ^3.0.3
-  dio: ^5.2.1
-  async: ^2.9.0
-  mime: ^1.0.4
+  # https://pub.dev/packages/crypto
+  crypto: ^3.0.7
+  # https://pub.dev/packages/dio
+  dio: ^5.9.2
+  # https://pub.dev/packages/async
+  async: ^2.13.1
+  # https://pub.dev/packages/mime
+  mime: ^2.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  flutter_lints: ^6.0.0
 
 screenshots:
   - description: The aliyun oss logo
