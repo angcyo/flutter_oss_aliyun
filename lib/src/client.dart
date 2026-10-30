@@ -25,10 +25,7 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
   final String bucketName;
   static late Dio _dio;
 
-  Client._({
-    required this.endpoint,
-    required this.bucketName,
-  });
+  Client._({required this.endpoint, required this.bucketName});
 
   static Client init({
     String? stsUrl,
@@ -40,7 +37,8 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
     assert(stsUrl != null || authGetter != null);
     _dio = dio ?? RestClient.getInstance();
 
-    final authGet = authGetter ??
+    final authGet =
+        authGetter ??
         () async {
           final response = await _dio.get<dynamic>(stsUrl!);
           return Auth.fromJson(response.data!);
@@ -132,7 +130,7 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
       "OSSAccessKeyId": auth.accessKey,
       "Expires": expires,
       "Signature": auth.getSignature(expires, bucket, fileKey, params: params),
-      "security-token": auth.encodedToken
+      "security-token": auth.encodedToken,
     };
     parameters.addAll(params ?? {});
     final HttpRequest request = HttpRequest.get(url, parameters: parameters);
@@ -156,7 +154,7 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
           fileKey,
           bucketName: bucketName,
           expireSeconds: expireSeconds,
-        )
+        ),
     };
   }
 
@@ -264,6 +262,7 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
   Future<Response> downloadObject(
     String fileKey,
     String savePath, {
+    Options? dioOptions,
     String? bucketName,
     CancelToken? cancelToken,
     ProgressCallback? onReceiveProgress,
@@ -279,7 +278,9 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
       request.url,
       savePath,
       cancelToken: cancelToken,
-      options: Options(headers: request.headers),
+      options:
+          dioOptions?.copyWith(headers: request.headers) ??
+          Options(headers: request.headers),
       onReceiveProgress: onReceiveProgress,
     );
   }
@@ -291,6 +292,7 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
   Future<Response<dynamic>> putObject(
     List<int> fileData,
     String fileKey, {
+    Options? dioOptions,
     CancelToken? cancelToken,
     PutRequestOption? option,
   }) async {
@@ -325,7 +327,9 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
       request.url,
       data: multipartFile.chunk(),
       cancelToken: cancelToken,
-      options: Options(headers: request.headers),
+      options:
+          dioOptions?.copyWith(headers: request.headers) ??
+          Options(headers: request.headers),
       onSendProgress: option?.onSendProgress,
       onReceiveProgress: option?.onReceiveProgress,
     );
@@ -338,6 +342,7 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
   Future<Response<dynamic>> appendObject(
     List<int> fileData,
     String fileKey, {
+    Options? dioOptions,
     CancelToken? cancelToken,
     PutRequestOption? option,
     int? position,
@@ -359,7 +364,7 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
     final Map<String, dynamic> externalHeaders = option?.headers ?? {};
     final Map<String, dynamic> headers = {
       ...internalHeaders,
-      ...externalHeaders
+      ...externalHeaders,
     };
 
     final String url =
@@ -371,7 +376,9 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
       request.url,
       data: multipartFile.chunk(),
       cancelToken: cancelToken,
-      options: Options(headers: request.headers),
+      options:
+          dioOptions?.copyWith(headers: request.headers) ??
+          Options(headers: request.headers),
       onSendProgress: option?.onSendProgress,
       onReceiveProgress: option?.onReceiveProgress,
     );
@@ -383,6 +390,7 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
   @override
   Future<Response<dynamic>> putObjectFile(
     String filepath, {
+    Options? dioOptions,
     PutRequestOption? option,
     CancelToken? cancelToken,
     String? fileKey,
@@ -410,7 +418,7 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
     final Map<String, dynamic> headers = {
       ...internalHeaders,
       if (callback != null) ...callback.toHeaders(),
-      ...externalHeaders
+      ...externalHeaders,
     };
 
     final String url = "https://$bucket.$endpoint/$filename";
@@ -421,7 +429,9 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
     return _dio.put(
       request.url,
       data: multipartFile.finalize(),
-      options: Options(headers: request.headers),
+      options:
+          dioOptions?.copyWith(headers: request.headers) ??
+          Options(headers: request.headers),
       cancelToken: cancelToken,
       onSendProgress: option?.onSendProgress,
       onReceiveProgress: option?.onReceiveProgress,
@@ -434,6 +444,7 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
   @override
   Future<List<Response<dynamic>>> putObjectFiles(
     List<AssetFileEntity> assetEntities, {
+    Options? dioOptions,
     CancelToken? cancelToken,
   }) async {
     final uploads = assetEntities.map((fileEntity) {
@@ -442,6 +453,7 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
         fileKey: fileEntity.filename,
         cancelToken: cancelToken,
         option: fileEntity.option,
+        dioOptions: dioOptions,
       );
     }).toList();
     return await Future.wait(uploads);
@@ -453,6 +465,7 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
   @override
   Future<List<Response<dynamic>>> putObjects(
     List<AssetEntity> assetEntities, {
+    Options? dioOptions,
     CancelToken? cancelToken,
   }) async {
     final uploads = assetEntities.map((file) {
@@ -461,6 +474,7 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
         file.filename,
         cancelToken: cancelToken,
         option: file.option,
+        dioOptions: dioOptions,
       );
     }).toList();
     return await Future.wait(uploads);
@@ -511,7 +525,7 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
     final Map<String, dynamic> externalHeaders = option.headers ?? {};
     final Map<String, dynamic> headers = {
       ...internalHeaders,
-      ...externalHeaders
+      ...externalHeaders,
     };
 
     final Auth auth = await getAuth();
@@ -529,9 +543,7 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
 
   /// get all supported regions
   @override
-  Future<Response<dynamic>> getAllRegions({
-    CancelToken? cancelToken,
-  }) async {
+  Future<Response<dynamic>> getAllRegions({CancelToken? cancelToken}) async {
     final Auth auth = await getAuth();
 
     final String url = "https://$endpoint/?regions";
@@ -595,9 +607,10 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
     final Auth auth = await getAuth();
 
     final String url = "https://$bucket.$endpoint/?policy";
-    final HttpRequest request = HttpRequest.delete(url, headers: {
-      'content-type': Headers.jsonContentType,
-    });
+    final HttpRequest request = HttpRequest.delete(
+      url,
+      headers: {'content-type': Headers.jsonContentType},
+    );
     auth.sign(request, bucket, "?policy");
 
     return _dio.delete(
@@ -618,9 +631,10 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
     final Auth auth = await getAuth();
 
     final String url = "https://$bucket.$endpoint/?policy";
-    final HttpRequest request = HttpRequest.put(url, headers: {
-      'content-type': Headers.jsonContentType,
-    });
+    final HttpRequest request = HttpRequest.put(
+      url,
+      headers: {'content-type': Headers.jsonContentType},
+    );
     auth.sign(request, bucket, "?policy");
 
     return _dio.put(
@@ -642,10 +656,13 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
     final Auth auth = await getAuth();
 
     final String url = "https://$bucket.$endpoint/?acl";
-    final HttpRequest request = HttpRequest.put(url, headers: {
-      'content-type': Headers.jsonContentType,
-      'x-oss-acl': aciMode.content,
-    });
+    final HttpRequest request = HttpRequest.put(
+      url,
+      headers: {
+        'content-type': Headers.jsonContentType,
+        'x-oss-acl': aciMode.content,
+      },
+    );
     auth.sign(request, bucket, "?acl");
 
     return _dio.put(
@@ -685,9 +702,10 @@ class Client with AuthMixin, HttpMixin implements ClientApi {
     final Auth auth = await getAuth();
 
     final String url = "https://$bucket.$endpoint/$fileKey";
-    final HttpRequest request = HttpRequest.delete(url, headers: {
-      'content-type': Headers.jsonContentType,
-    });
+    final HttpRequest request = HttpRequest.delete(
+      url,
+      headers: {'content-type': Headers.jsonContentType},
+    );
     auth.sign(request, bucket, fileKey);
 
     return _dio.delete(

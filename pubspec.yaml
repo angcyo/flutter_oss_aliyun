@@ -12,13 +12,13 @@ environment:
 
 dependencies:
   # https://pub.dev/packages/crypto
-  crypto: ^3.0.7
+  crypto: ^3.0.8
   # https://pub.dev/packages/dio
-  dio: ^5.9.2
+  dio: ^5.11.1
   # https://pub.dev/packages/async
   async: ^2.13.1
   # https://pub.dev/packages/mime
-  mime: ^2.0.0
+  mime: ^2.1.0
 
 dev_dependencies:
   flutter_test:
